@@ -1,0 +1,279 @@
+//  Copyright © 2015-2016 Apple Inc. All rights reserved.
+(
+
+
+    {
+        Type = BuildSystem;
+        Identifier = com.apple.build-system.core;
+        BasedOn = "embedded:com.apple.build-system.core";
+        DeletedProperties = ( PROVISIONING_PROFILE, CODE_SIGN_ENTITLEMENTS );
+        Properties = (
+        );
+    },
+
+    {
+        Type = BuildSystem;
+        Identifier = com.apple.build-system.native;
+        BasedOn = "embedded:com.apple.build-system.native";
+        DeletedProperties = ( PROVISIONING_PROFILE, CODE_SIGN_ENTITLEMENTS );
+        Properties = (
+            {
+                Name = "GCC_ENABLE_EXCEPTIONS";
+                Type = Boolean;
+                DefaultValue = YES;
+            },
+        );
+    },
+
+
+    {   Type = Linker;
+        Identifier = com.apple.pbx.linkers.ld;
+        BasedOn = "embedded:com.apple.pbx.linkers.ld";
+        Class = PBXLinkerSpecificationLd;
+        Name = "Apple Mach-O Linker";
+        Options = (
+            {
+                Name = "LD_ENTITLEMENTS_SECTION";
+                Type = String;
+                DefaultValue = "";
+                IsInputDependency = YES;
+                CommandLineArgs = {
+                    "" = ();
+                    "<<otherwise>>" = ( "-Xlinker", "-sectcreate", "-Xlinker", "__TEXT", "-Xlinker", "__entitlements", "-Xlinker", "$(value)" );
+                };
+            },
+        );
+    },
+
+    // Bundle
+    {   Type = ProductType;
+        Identifier = com.apple.product-type.bundle;
+        Class = PBXBundleProductType;
+        Name = "Bundle";
+        Description = "Generic bundle";
+        DefaultTargetName = "Bundle";
+        DefaultBuildProperties = {
+            FULL_PRODUCT_NAME = "$(WRAPPER_NAME)";
+            MACH_O_TYPE = "mh_bundle";
+            WRAPPER_PREFIX = "";
+            WRAPPER_SUFFIX = ".$(WRAPPER_EXTENSION)";
+            WRAPPER_EXTENSION = "bundle";
+            WRAPPER_NAME = "$(WRAPPER_PREFIX)$(PRODUCT_NAME)$(WRAPPER_SUFFIX)";
+            FRAMEWORK_FLAG_PREFIX = "-framework";
+            LIBRARY_FLAG_PREFIX = "-l";
+            LIBRARY_FLAG_NOSPACE = YES;
+            STRIP_STYLE = "non-global";
+            GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+            CODE_SIGNING_ALLOWED = YES;
+            AD_HOC_CODE_SIGNING_ALLOWED = YES;
+        };
+        PackageTypes = (
+            com.apple.package-type.wrapper
+        );
+        IsWrapper = YES;
+        HasInfoPlist = YES;
+        HasInfoPlistStrings = YES;
+    },
+
+    // Application
+    {   Type = ProductType;
+        Identifier = com.apple.product-type.application;
+        BasedOn = com.apple.product-type.bundle;
+        Class = PBXApplicationProductType;
+        Name = "Application";
+        Description = "Application";
+        DefaultTargetName = "Application";
+        SupportsOnDemandResources = YES;
+        DefaultBuildProperties = {
+            MACH_O_TYPE = "mh_execute";
+            GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+            GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+            WRAPPER_SUFFIX = ".$(WRAPPER_EXTENSION)";
+            WRAPPER_EXTENSION = "app";
+            INSTALL_PATH = "$(LOCAL_APPS_DIR)";
+            STRIP_STYLE = "all";
+			ENABLE_ON_DEMAND_RESOURCES = YES;
+            CODE_SIGNING_ALLOWED = YES;
+            AD_HOC_CODE_SIGNING_ALLOWED = YES;
+        };
+        PackageTypes = (
+            com.apple.package-type.wrapper.application
+        );
+        CanEmbedCompilerSanitizerLibraries = YES;
+        RunpathSearchPathForEmbeddedFrameworks = "@executable_path/Frameworks";
+        ValidateEmbeddedBinaries = YES;
+        SupportsHostingTests = YES;
+        SupportsBeingUITestTarget = YES;
+    },
+
+    // App Extension
+    {   Type = ProductType;
+        Identifier = "com.apple.product-type.app-extension";
+        BasedOn = "com.apple.product-type.pluginkit-plugin";
+        Class = PBXBundleProductType;
+        Name = "App Extension";
+        Description = "App Extension";
+        DefaultTargetName = "App Extension";
+        "DefaultBuildProperties" = {
+            "CODE_SIGNING_ALLOWED" = YES;
+            "APPLICATION_EXTENSION_API_ONLY" = YES;
+            "PRODUCT_SPECIFIC_LDFLAGS" = "-e _NSExtensionMain";
+            WRAPPER_EXTENSION = "appex";
+            ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR = all; // Include standalone files for all reps of extension icons <rdar://problem/32627780>
+        };
+        PackageTypes = (
+            "com.apple.package-type.app-extension",
+        );
+    },
+
+    // Unit Test Bundle Product
+    {   Type = ProductType;
+        Identifier = com.apple.product-type.bundle.unit-test;
+        BasedOn = com.apple.product-type.bundle;
+        Class = PBXXCTestBundleProductType;
+        Name = "Unit Test Bundle";
+        Description = "Unit Test Bundle";
+        DefaultBuildProperties = {
+            WRAPPER_EXTENSION = "xctest";
+            ENABLE_TESTING_SEARCH_PATHS = YES;
+            PRODUCT_SPECIFIC_LDFLAGS = "$(inherited) -framework XCTest";
+            PRODUCT_TYPE_SWIFT_STDLIB_TOOL_FLAGS = "--scan-executable \"$(PLATFORM_DIR)/Developer/usr/lib/libXCTestSwiftSupport.dylib\"";
+            ENABLE_BITCODE = NO;
+            CODE_SIGNING_ALLOWED = YES;
+            AD_HOC_CODE_SIGNING_ALLOWED = YES;
+            XCTRUNNER_PATH = "$(XCTRUNNER_PATH$(TEST_BUILD_STYLE))";
+            LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(LD_RUNPATH_SEARCH_PATHS_SHALLOW_BUNDLE_$(SHALLOW_BUNDLE))";
+            LD_RUNPATH_SEARCH_PATHS_SHALLOW_BUNDLE_YES = "@loader_path/Frameworks";
+            LD_RUNPATH_SEARCH_PATHS_SHALLOW_BUNDLE_NO = "@loader_path/../Frameworks";
+            INSTALL_PATH = "$(INSTALL_PATH_XCTRUNNER_$(USES_XCTRUNNER:default=NO))";
+            INSTALL_PATH_XCTRUNNER_YES = "$(DEFAULT_TEST_RUNNER_APP_INSTALL_PATH)";
+            INSTALL_PATH_XCTRUNNER_NO = "$(DEFAULT_TEST_BUNDLE_INSTALL_PATH)";
+        };
+        PackageTypes = (
+            com.apple.package-type.bundle.unit-test
+        );
+        CanEmbedCompilerSanitizerLibraries = YES;
+        IsUnitTest = YES;
+    },
+
+    // UI Testing Bundle
+    {   Type = ProductType;
+        Identifier = com.apple.product-type.bundle.ui-testing;
+        BasedOn = com.apple.product-type.bundle.unit-test;
+        Class = PBXXCTestBundleProductType;
+        Name = "UI Testing Bundle";
+        Description = "UI Testing Bundle";
+        DefaultBuildProperties = {
+            USES_XCTRUNNER = "YES";
+        };
+        PackageTypes = (
+            com.apple.package-type.bundle.unit-test
+        );
+        IsUITest = YES;
+        InfoPlistAdditions = {
+            XCTContainsUITests = YES;
+        };
+    },
+
+    // Legacy OCUnit Test Bundle Product
+    {   Type = ProductType;
+        Identifier = com.apple.product-type.bundle.ocunit-test;
+        BasedOn = com.apple.product-type.bundle;
+        Class = PBXBundleProductType;
+        Name = "OCUnit Test Bundle";
+        Description = "OCUnit Test Bundle";
+        DefaultBuildProperties = {
+            WRAPPER_EXTENSION = "octest";
+            CODE_SIGNING_ALLOWED = YES;
+            AD_HOC_CODE_SIGNING_ALLOWED = YES;
+
+        };
+        PackageTypes = (
+            com.apple.package-type.bundle.ocunit-test
+        );
+        IsUnitTest = YES;
+    },
+
+    // Dynamic library
+    {   Type = ProductType;
+        Identifier = com.apple.product-type.library.dynamic;
+        Class = PBXDynamicLibraryProductType;
+        Name = "Dynamic Library";
+        Description = "Dynamic library";
+        DefaultTargetName = "Dynamic Library";
+        DefaultBuildProperties = {
+            FULL_PRODUCT_NAME = "$(EXECUTABLE_NAME)";
+            MACH_O_TYPE = "mh_dylib";
+            REZ_EXECUTABLE = YES;
+            EXECUTABLE_SUFFIX = ".$(EXECUTABLE_EXTENSION)";
+            EXECUTABLE_EXTENSION = "dylib";
+            PUBLIC_HEADERS_FOLDER_PATH = "/usr/local/include";
+            PRIVATE_HEADERS_FOLDER_PATH = "/usr/local/include";
+            INSTALL_PATH = "/usr/local/lib";
+            DYLIB_INSTALL_NAME_BASE = "$(INSTALL_PATH)";
+            LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
+            DYLIB_COMPATIBILITY_VERSION = "1";
+            DYLIB_CURRENT_VERSION = "1";
+            FRAMEWORK_FLAG_PREFIX = "-framework";
+            LIBRARY_FLAG_PREFIX = "-l";
+            LIBRARY_FLAG_NOSPACE = YES;
+            STRIP_STYLE = "debugging";
+            GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+            CODE_SIGNING_ALLOWED = YES;
+            AD_HOC_CODE_SIGNING_ALLOWED = YES;
+            CODE_SIGNING_REQUIRED = NO;
+        };
+        PackageTypes = (
+            com.apple.package-type.mach-o-dylib   // default
+        );
+    },
+
+    // Framework
+    {   Type = ProductType;
+        Identifier = com.apple.product-type.framework;
+        BasedOn = com.apple.product-type.bundle;
+        Class = PBXFrameworkProductType;
+        Name = "Framework";
+        Description = "Framework";
+        DefaultTargetName = "Framework";
+        DefaultBuildProperties = {
+            MACH_O_TYPE = "mh_dylib";
+            FRAMEWORK_VERSION = "A";
+            WRAPPER_SUFFIX = ".$(WRAPPER_EXTENSION)";
+            WRAPPER_EXTENSION = "framework";
+            INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+            DYLIB_INSTALL_NAME_BASE = "$(INSTALL_PATH)";
+            LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
+            STRIP_STYLE = "debugging";
+            CODE_SIGNING_ALLOWED = YES;
+            AD_HOC_CODE_SIGNING_ALLOWED = YES;
+            CODE_SIGNING_REQUIRED = NO;
+            ENTITLEMENTS_REQUIRED = NO;
+            CODE_SIGNING_REQUIRES_TEAM = YES;
+        };
+        PackageTypes = (
+            com.apple.package-type.wrapper.framework
+        );
+    },
+
+    // XPC Service
+    {
+        Type = ProductType;
+        Identifier = "com.apple.product-type.xpc-service";
+        BasedOn = "com.apple.product-type.bundle";
+        Class = PBXBundleProductType;
+        Name = "XPC Service";
+        Description = "XPC Service";
+        DefaultTargetName = "XPC Service";
+        CanEmbedCompilerSanitizerLibraries = YES;
+        "DefaultBuildProperties" = {
+            "MACH_O_TYPE" = "mh_execute";
+            WRAPPER_EXTENSION = "xpc";
+            CODE_SIGNING_ALLOWED = YES;
+            AD_HOC_CODE_SIGNING_ALLOWED = YES;
+        };
+        PackageTypes = (
+            "com.apple.package-type.xpc-service",
+        );
+    },
+)
